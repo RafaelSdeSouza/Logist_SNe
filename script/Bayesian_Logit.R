@@ -69,8 +69,11 @@ SNedata3<-na.omit(SNedata2)
 # Start the logit model
 
 # Define data for JAGS
-X<-model.matrix(~ M_gal + log_sSFR + g.r+
-                r.i+i.z, data = SNedata3)
+#X<-model.matrix(~ M_gal + log_sSFR + g.r+
+#                r.i+i.z, data = SNedata3)
+
+X<-model.matrix(~ g.r+r.i+i.z, data = SNedata3)
+  
 K<-ncol(X)
 
 typeSne<-as.numeric(SNedata3$type_bin)-1
@@ -108,6 +111,7 @@ jags.logit<-jags.model(
 update(jags.logit, 20000)
 posterior.logit <- coda.samples(jags.logit, params, n.iter = 50000)
 
-
+require(ggmcmc)
 beta_post<-ggs(posterior.logit ,family=c("beta"))
+ggs_density(beta_post)
                       
