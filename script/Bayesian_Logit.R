@@ -64,6 +64,50 @@ levels(SNedata2$type_bin)
 
 # First data is almost ready, now let's remove missing data for simplicity. 
 #But we will include a treatment for this in the final model. 
+complete.cases(SNedata2)
+SNedata3<-na.omit(SNedata2)
+# Start the logit model
+
+# Define data for JAGS
+X<-model.matrix(~ M_gal + log_sSFR + g.r+
+                r.i+i.z, data = SNedata3)
+K<-ncol(X)
+
+typeSne<-as.numeric(SNedata3$type_bin)-1
+jags.data <- list(Y= typeSne,
+                 N = nrow(SNedata3),
+                 X = X,
+                 b0 = rep(0, K),
+                 B0 = diag(0.00001, K))
 
 
+model<-"model{
+#1. Priors
+beta ~ dmnorm(b0[], B0[,])
+#2. Likelihood
+for (i in 1:N){
+Y[i] ~ dbern(p[i])
+logit(p[i]) <- max(-20, min(20, eta[i]))
+eta[i] <- inprod(beta[], X[i,])
+LLi[i] <- Y[i] * log(p[i]) +
+(1 - Y[i]) * log(1 - p[i])
+}
+LogL <- sum(LLi[1:N])
+}"
+inits<-function () {
+  list(beta = rnorm(K, 0, 0.1))}
+params <- c("beta", "LogL")
+
+jags.logit<-jags.model(
+  data = jags.data, 
+  inits = inits(), 
+  textConnection(model),
+  n.chains = 3,
+  n.adapt=1000
+  )
+update(jags.logit, 20000)
+posterior.logit <- coda.samples(jags.logit, params, n.iter = 50000)
+
+
+beta_post<-ggs(posterior.logit ,family=c("beta"))
                       
