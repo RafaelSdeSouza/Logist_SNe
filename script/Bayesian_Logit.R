@@ -37,7 +37,7 @@ data.0= read.csv(file="..//data//sdsssn_master.dat2.txt",header=TRUE,dec=".",sep
 
 #Select subset
 
-data.1=SNe_data[,c("logMassFSPS","ageFSPS","logSSFRFSPS","dereduhost","deredghost",
+data.1=data.0[,c("logMassFSPS","ageFSPS","logSSFRFSPS","dereduhost","deredghost",
                       "deredrhost","deredihost","deredzhost","separationhost",
                       "Classification")]
 #Let's use colours u-g, g-r, r-i, i-z,
@@ -50,11 +50,13 @@ SNedata<-data.frame(M_gal=data.1$logMassFSPS,age=data.1$ageFSPS,
                     Sep_host=data.1$separationhost,Type=data.1$Classification)
 #Let's use only Type Ia and II for now (no AGNs)
 
-SNedata2<-SNedata[which(SNedata$Type=="pSNIa" | 
-                SNedata$Type=="pSNII" | SNedata$Type=="SNIa"
-              | SNedata$Type=="SNIa?" | SNedata$Type=="SNII" |
-                SNedata$Type=="zSNIa" |
-                SNedata$Type=="zSNII"),]
+#SNedata2<-SNedata[which(SNedata$Type=="pSNIa" | 
+#                SNedata$Type=="pSNII" | SNedata$Type=="SNIa"
+#              | SNedata$Type=="SNIa?" | SNedata$Type=="SNII" |
+#                SNedata$Type=="zSNIa" |
+#                SNedata$Type=="zSNII"),]
+
+SNedata2<-SNedata[which(SNedata$Type=="zSNIa"|SNedata$Type=="zSNII"),]
 # Now collapse all to SNeIa or II
 
 library(plyr)
@@ -90,16 +92,15 @@ beta ~ dmnorm(b0[], B0[,])
 #2. Likelihood
 for (i in 1:N){
 Y[i] ~ dbern(p[i])
-logit(p[i]) <- max(-20, min(20, eta[i]))
+logit(p[i]) <-  eta[i]
 eta[i] <- inprod(beta[], X[i,])
-LLi[i] <- Y[i] * log(p[i]) +
-(1 - Y[i]) * log(1 - p[i])
+#3. Prediction
+prediction[i]~dbern(p[i])
 }
-LogL <- sum(LLi[1:N])
 }"
 inits<-function () {
   list(beta = rnorm(K, 0, 0.1))}
-params <- c("beta", "LogL")
+params <- c("beta","prediction")
 
 jags.logit<-jags.model(
   data = jags.data, 
@@ -114,4 +115,16 @@ posterior.logit <- coda.samples(jags.logit, params, n.iter = 50000)
 require(ggmcmc)
 beta_post<-ggs(posterior.logit ,family=c("beta"))
 ggs_density(beta_post)
-                      
+
+jagssamples <- jags.samples(jags.logit, params, n.iter = 50000)
+predtype<-summary(as.mcmc.list(jagssamples$prediction))
+predtype<-predtype$quantiles
+
+require(mlearning)
+require(caret)
+SNe_conf<-confusion(predtype[,3], typeSne)
+
+xtab <- table(predtype[,3], typeSne)
+confusionMatrix(xtab)
+confusionMatrix(pred, truth)
+confusionMatrix(xtab, prevalence = 0.25) 
