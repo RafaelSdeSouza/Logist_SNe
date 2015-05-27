@@ -22,68 +22,26 @@ data.0= read.fwf(file="..//data//snsdss.dat",width = c(7,1, 11, 9, 1,9,1,8,2,1,
 
 SN_cat<-data.frame(SNtype=data.0[,11],Galtype=data.0[,19])
 
-# Host galaxy properties
+SN_cat2<-na.omit(SN_cat)
+require(gdata)
+SN_cat2$SNtype<-trim(SN_cat2$SNtype)
 
-#Host galaxy log(Mass): logMassFSPS
-#Host galaxy age: ageFSPS
-#Host galaxy log(SSFR) (FSPS):logSSFRFSPS
-#Host galaxy dereddened u magnitude:dereduhost
-#Host galaxy dereddened g magnitude:deredghost
-#Host galaxy dereddened r magnitude:deredrhost
-#Host galaxy dereddened i magnitude:deredihost 
-#Host galaxy dereddened z magnitude:deredzhost
-#SN-host separation (arcseconds):separationhost
+SN_cat3<-SN_cat2[which(SN_cat2$SNtype=="Ia"|SN_cat2$SNtype=="II"),]
+SN_cat3$SNtype<-droplevels(SN_cat3$SNtype)
 
-# SNe properties
-
-# Classification: Classification
-
-#Select subset
-
-data.1=data.0[,c("logMassFSPS","ageFSPS","logSSFRFSPS","dereduhost","deredghost",
-                      "deredrhost","deredihost","deredzhost","separationhost",
-                      "Classification")]
-#Let's use colours u-g, g-r, r-i, i-z,
-
-SNedata<-data.frame(M_gal=data.1$logMassFSPS,age=data.1$ageFSPS,
-                    log_sSFR=data.1$logSSFRFSPS,u.g=data.1$dereduhost-data.1$deredghost,
-                    g.r=data.1$deredghost-data.1$deredrhost,
-                    r.i=data.1$deredrhost-data.1$deredihost,
-                    i.z=data.1$deredihost-data.1$deredzhost,
-                    Sep_host=data.1$separationhost,Type=data.1$Classification)
-#Let's use only Type Ia and II for now (no AGNs)
-
-#SNedata2<-SNedata[which(SNedata$Type=="pSNIa" | 
-#                SNedata$Type=="pSNII" | SNedata$Type=="SNIa"
-#              | SNedata$Type=="SNIa?" | SNedata$Type=="SNII" |
-#                SNedata$Type=="zSNIa" |
-#                SNedata$Type=="zSNII"),]
-
-SNedata2<-SNedata[which(SNedata$Type=="zSNIa"|SNedata$Type=="zSNII"),]
-# Now collapse all to SNeIa or II
-
-library(plyr)
-SNedata2$type_bin<-droplevels(revalue(SNedata2$Type, c("pSNIa"="SNIa", "SNIa?"="SNIa", "zSNIa"="SNIa",
-                         "pSNII"="SNII","zSNII"="SNII")))
-levels(SNedata2$type_bin)
-
-# First data is almost ready, now let's remove missing data for simplicity. 
-#But we will include a treatment for this in the final model. 
-complete.cases(SNedata2)
-SNedata3<-na.omit(SNedata2)
 # Start the logit model
 
 # Define data for JAGS
 #X<-model.matrix(~ M_gal + log_sSFR + g.r+
 #                r.i+i.z, data = SNedata3)
 
-X<-model.matrix(~ g.r+r.i+i.z, data = SNedata3)
+X<-model.matrix(~ Galtype, data = SN_cat3)
   
 K<-ncol(X)
 
-typeSne<-as.numeric(SNedata3$type_bin)-1
+typeSne<-as.numeric(SN_cat3$SNtype)-1
 jags.data <- list(Y= typeSne,
-                 N = nrow(SNedata3),
+                 N = nrow(SN_cat3),
                  X = X,
                  b0 = rep(0, K),
                  B0 = diag(0.00001, K))
