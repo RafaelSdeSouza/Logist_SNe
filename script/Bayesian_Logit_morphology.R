@@ -76,6 +76,8 @@ posterior.logit <- coda.samples(jags.logit, params, n.iter = 50000)
 require(ggmcmc)
 beta_post<-ggs(posterior.logit ,family=c("beta"))
 ggs_density(beta_post)
+ggs_caterpillar(beta_post)
+
 
 jagssamples <- jags.samples(jags.logit, params, n.iter = 50000)
 predtype<-summary(as.mcmc.list(jagssamples$prediction))
