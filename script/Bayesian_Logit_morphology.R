@@ -13,11 +13,14 @@ library(scales)
 
 #Read dataset
 
-data.0= read.csv(file="..//data//sdsssn_master.dat2.txt",header=TRUE,dec=".",sep="")
+data.0= read.fwf(file="..//data//snsdss.dat",width = c(7,1, 11, 9, 1,9,1,8,2,1,
+                                                       11,1,1,26,2,14,10,9,10,1,
+                                                       1,1,2,6,5,5,6,6,6,7,7))
 
 
-# Select few variables for test (avoiding double observations for now). Using only FSPS
-# Let's ignore the errors for now
+# Select few variables for test. For now, galaxy morphology and SN type
+
+SN_cat<-data.frame(SNtype=data.0[,11],Galtype=data.0[,19])
 
 # Host galaxy properties
 

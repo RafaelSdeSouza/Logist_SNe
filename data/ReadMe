@@ -1,0 +1,132 @@
+J/A+A/544/A81      Supernovae and their hosts in the SDSS DR8  (Hakobyan+, 2012)
+================================================================================
+Supernovae and their host galaxies. I. The SDSS DR8 database and statistics.
+    Hakobyan A.A., Adibekyan V.Zh., Aramyan L.S., Petrosian A.R., Gomes J.M.,
+    Mamon G.A., Kunth D., Turatto M.
+   <Astron. Astrophys. 544, A81 (2012)>
+   =2012A&A...544A..81H
+================================================================================
+ADC_Keywords: Supernovae ; Galaxies, optical ; Galaxies, photometry ;
+              Galaxy catalogs ; Morphology ; Positional data ; Surveys
+Keywords: astronomical databases: miscellaneous - supernovae: general -
+          galaxies: general - galaxies: fundamental parameters -
+          galaxies: structure
+
+Abstract:
+    We report the creation of large and well-defined database that
+    combines extensive new measurements and a literature search of 3876
+    supernovae (SNe) and their 3679 host galaxies located in the sky area
+    covered by the Sloan Digital Sky Survey (SDSS) Data Release 8 (DR8).
+    This database should be much larger than previous ones, and should
+    contain a homogenous set of global parameters of SN hosts, including
+    morphological classifications and measures of nuclear activity.
+    Identification of the host galaxy sample is 91% complete (with 3536
+    SNe in 3340 hosts), of which the SDSS names of ~1100 anonymous hosts
+    are listed for the first time. The morphological classification is
+    available for 2104 host galaxies, including 73 (56) hosts in
+    interacting (merging) systems. The total sample of host galaxies
+    collects heliocentric redshifts for 3317 (~90%) galaxies. The g-band
+    magnitudes, D_25_, b/a, and PA are available for 2030 hosts of the
+    morphologically classified sample of galaxies. Nuclear activity
+    measures are provided for 1189 host galaxies. We analyze and discuss
+    many selection effects and biases that can significantly affect any
+    future analysis of our sample. The creation of this large database
+    will help to better understand how the different types of SNe are
+    correlated with the properties of the nuclei and global physical
+    parameters of the host galaxies, and minimize possible selection
+    effects and errors that often arise when data are selected from
+    different sources and catalogues.
+
+Description:
+    The measurements of apparent magnitudes, diameters (D_25_), axial
+    ratios (b/a), and position angles (PA) of SN host galaxies were made
+    using the images extracted from the SDSS g-band. For each host galaxy,
+    we analyzed RGB images of the SDSS to accurately measure the position
+    of its nucleus to provide the SDSS name. With these images, we also
+    provide the host galaxy's morphological type, and note if it has a
+    bar, a disturbed disk, and whether it is part of an interacting or
+    merging system. In addition, the SDSS nuclear spectra were analyzed to
+    diagnose the central power source of the galaxies. Special attention
+    was paid to collect accurate data on the spectroscopic classes,
+    coordinates, offsets of SNe, and heliocentric redshifts of the host
+    galaxies.
+
+File Summary:
+--------------------------------------------------------------------------------
+ FileName  Lrecl  Records   Explanations
+--------------------------------------------------------------------------------
+ReadMe        80        .   This file
+snsdss.dat   187     3876   Physical parameters of SNe and their host galaxies
+--------------------------------------------------------------------------------
+
+See also:
+          B/sn  : Asiago Supernova Catalogue (Barbon et al., 1999-)
+ J/ApJ/708/661  : SDSS-II SN Survey: SNe II-P standardization (D'Andrea+, 2010)
+ J/ApJ/713/1026 : SN Ia rate at redshift <~0.3 from SDSS-II (Dilday+, 2010)
+ J/ApJS/185/32  : First-year SDSS-II SN results (Kessler+, 2009)
+ http://www.sdss.org : SDSS Home Page
+
+Byte-by-byte Description of file: snsdss.dat
+--------------------------------------------------------------------------------
+   Bytes Format Units   Label    Explanations
+--------------------------------------------------------------------------------
+   1-  6  A6    ---     SN       Supernova (SN) designation
+       8  A1    ---   u_SN       [?] "?" denote an unconfirmed SN
+  10- 18  F9.5  deg     RAdeg    ? SN right ascension in degrees (J2000.0)
+  20- 28  F9.5  deg     DEdeg    ? SN declination in degrees (J2000.0)
+      30  A1    ---   u_DEdeg    Uncertainty flag on SN position
+  32- 37  F6.2  arcsec  oRA      ? SN offset right ascension from host galaxy
+                                   nucleus, in the E/W direction
+      39  A1    ---   n_oRA      [E/W] E/W direction of SN offset oRA
+  41- 47  F7.2  arcsec  oDE      ? SN offset declination from host galaxy
+                                   nucleus in arcsec, in the N/S direction
+      49  A1    ---   n_oDE      [N/S] N/S direction of SN offset oDE
+      51  A1    ---   u_oDE      SN offset uncertainty flag
+  54- 64  A11   ---     Type     ? SN type (mostly from spectroscopy)
+      66  A1    ---   u_Type     [*:?] Uncertainty flag on SN type (1)
+      68  A1    ---   f_Type     [U] U for updated SN type
+  71- 89  A19   ---     Gal      SN host galaxy identification (2)
+      94  A1    ---   u_Gal      SN host galaxy uncertainty (3)
+  97-105  F9.5  deg     RAg.deg  ? Host galaxy right ascension (J2000.0)
+ 107-115  F9.5  deg     DEg.deg  ? Host galaxy declination (J2000.0)
+ 117-124  F8.5  ---     z        ? Host galaxy redshift (4)
+ 126-135  A10   ---     MType    ? Host galaxy morphological type
+     136  A1    ---   u_MType    [:?] Uncertainty flag on morphology (5)
+     138  A1    ---     Bar      [B] Presence of bar in the host galaxy
+ 141-145  A5    ---     int      [inter/merg ] Host in interacting or in merging
+     147  A1    ---     dd       [D] Host with disturbed disk structure
+ 151-155  F5.1  arcsec  Diam     ? Host galaxy isophotal diameter (6)
+ 157-161  F5.3  ---     b/a      ? Host galaxy axial ratio
+ 163-167  F5.1  deg     PA       ? Host galaxy position angle
+ 169-173  F5.2  mag     gmag     ? Host galaxy g-band magnitude
+ 175-179  A5    ---     BPT      Host galaxy activity class in BPT (7)
+ 182-187  A6    ---     WHAN     Host galaxy activity class in WHAN (8)
+--------------------------------------------------------------------------------
+Note (1): In a few cases, marked by "*", SN types have been inferred from
+     the light curve. Uncertainties in SN type are marked by ":"
+     and "?" (highly uncertain).
+Note (2): Host galaxy SDSS identification. An alternative name is mentioned
+     when SDSS identification was not possible to obtain.
+     Unidentified (anonymous) galaxies are listed with the letter A.
+Note (3): In a few cases, where the association with
+     a definite host galaxy was not possible (multiple galaxy
+     systems, etc.), we have added ":" symbol.
+Note (4): Heliocentric redshift of host galaxy from different sources
+     (mostly from the SN catalogues and SDSS spectra).
+Note (5): Uncertainties in host galaxy morphological type are marked by ":"
+     and "?" (highly uncertain).
+Note (6): Measured major axis in arcsec (isophotal level of 25mag/arcsec^2^
+     in the SDSS g-band) of the host galaxy.
+Note (7): The activity of host in the BPT diagram, which includes narrow-line
+     AGN (Seyfert (Sy) or LINER), SF (star-forming), and composite (C) galaxies.
+Note (8): The activity of host in the WHAN diagram, which includes narrow-line
+     AGN (Seyfert (Sy) or LINER), SF (star-forming), and retired/passive (RP)
+     galaxies.  The WHAN column includes also broad-line AGN (BL AGN), and
+     passive (P) galaxies.
+--------------------------------------------------------------------------------
+
+Acknowledgements:
+    Artur Hakobyan, hakobyan(at)bao.sci.am
+
+================================================================================
+(End)       Artur Hakobyan   [BAO], Patricia Vannier [CDS]           27-Jun-2012
