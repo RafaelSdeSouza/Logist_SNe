@@ -49,7 +49,7 @@ SN_cat4<-SN_cat3[which(SN_cat3$Galtype2=="E"|SN_cat3$Galtype2=="E/S0"|SN_cat3$Ga
                          SN_cat3$Galtype2=="S"|SN_cat3$Galtype2=="S0"),]
 SN_cat4$Galtype2<-droplevels(SN_cat4$Galtype2)
 
-X<-model.matrix(~ Galtype2, data = SN_cat4)
+X<-model.matrix(~ Galtype2-1, data = SN_cat4)
 K<-ncol(X)
 
 typeSne<-as.numeric(SN_cat4$SNtype)-1
@@ -62,12 +62,18 @@ jags.data <- list(Y= typeSne,
 
 model<-"model{
 #1. Priors
-beta ~ dmnorm(b0[], B0[,])
+tau.R<-pow(sdBeta,-1)
+sdBeta ~ dgamma(0.01,0.01)
+
+for(j in 1:5){
+beta[j] ~ ddexp(0,tau.R)
+}
+beta.0~dnorm(0,1e-6)
 #2. Likelihood
 for (i in 1:N){
 Y[i] ~ dbern(p[i])
 logit(p[i]) <-  eta[i]
-eta[i] <- inprod(beta[], X[i,])
+eta[i] <- beta.0+inprod(beta[], X[i,])
 #3. Prediction
 prediction[i]~dbern(p[i])
 }
@@ -83,7 +89,7 @@ jags.logit<-jags.model(
   n.chains = 3,
   n.adapt=1000
   )
-update(jags.logit, 20000)
+update(jags.logit, 25000)
 posterior.logit <- coda.samples(jags.logit, params, n.iter = 50000)
 
 require(ggmcmc)
@@ -94,8 +100,11 @@ head(L.factors)
 beta_post<-ggs(posterior.logit,par_labels=L.factors,family=c("beta"))
 
 
-ggs_caterpillar(beta_post)
+pdf("..//figures/betas.pdf",width=7,height=7)
+ggs_caterpillar(beta_post)+theme_stata()+ylab("")
+dev.off()
 
+ggmcmc(beta_post)
 ggs_density(beta_post)
 
 jagssamples <- jags.samples(jags.logit, params, n.iter = 50000)
