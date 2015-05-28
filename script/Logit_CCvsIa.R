@@ -11,43 +11,13 @@ library(plyr)
 library(MASS)
 library(scales)
 library(plyr)
-#Read dataset
+require(runjags)
+#Read clean dataset
 
-data.0= read.fwf(file="..//data//snsdss.dat",width = c(7,1, 11, 9, 1,9,1,8,2,1,
-                                                       11,1,1,26,2,14,10,9,10,1,
-                                                       1,1,2,6,5,5,6,6,6,7,7))
+data.0= read.table(file="..//data//clean_cat.dat",header=TRUE)
 
-
-# Select few variables for test. For now, galaxy morphology and SN type
-
-SN_cat<-data.frame(SNtype=data.0[,11],Galtype=data.0[,19])
-
-SN_cat2<-na.omit(SN_cat)
-require(gdata)
-SN_cat2$SNtype<-trim(SN_cat2$SNtype)
-
-SN_cat3<-SN_cat2[which(SN_cat2$SNtype=="Ia"|SN_cat2$SNtype=="II"|SN_cat2$SNtype=="Ia"|
-                         SN_cat2$SNtype=="Ib"|SN_cat2$SNtype=="Ib/c"|SN_cat2$SNtype=="Ic"),]
-SN_cat3$SNtype<-droplevels(SN_cat3$SNtype)
-SN_cat3$SNtype<-revalue(SN_cat3$SNtype,c("Ia"="Ia","Ib"="CC","Ib/c"="CC","Ic"="CC","II"="CC"))
-
-# Start the logit model
-
-# Define data for JAGS
-#X<-model.matrix(~ M_gal + log_sSFR + g.r+
-#                r.i+i.z, data = SNedata3)
-
-
-SN_cat3$Galtype<-trim(SN_cat3$Galtype)
-
-SN_cat3$Galtype2<-revalue(SN_cat3$Galtype, c("E pec" ="E", "E/S0 pec"="E/S0","S pec"="S","S0 pec"="S0",
-                           "S0/a"="S0","S0/a pec"="S0","Sa"="S","Sa pec"="S","Sab"="S","Sab pec"="S","Sb"="S","Sb pec"="S",
-                           "Sbc"="S","Sbc pec"="S","Sc"="S","Sc pec"="S","Scd"="S",
-                           "Scd pec"="S","Sd"="S",
-                           "Sd pec"="S","Sdm"="S","Sdm pec"="S","Sm"="S"))
-SN_cat4<-SN_cat3[which(SN_cat3$Galtype2=="E"|SN_cat3$Galtype2=="E/S0"|SN_cat3$Galtype2=="Im"|
-                         SN_cat3$Galtype2=="S"|SN_cat3$Galtype2=="S0"),]
-SN_cat4$Galtype2<-droplevels(SN_cat4$Galtype2)
+galtype<-match(SN_cat4$Galtype2,c("S","S0","E/S0","E","Im"))
+Ntype<-length(unique(SN_cat4$Galtype2))
 
 X<-model.matrix(~ Galtype2-1, data = SN_cat4)
 K<-ncol(X)
@@ -82,38 +52,54 @@ inits<-function () {
   list(beta = rnorm(K, 0, 0.1))}
 params <- c("beta","prediction")
 
-jags.logit<-jags.model(
-  data = jags.data, 
-  inits = inits(), 
-  textConnection(model),
-  n.chains = 3,
-  n.adapt=1000
-  )
-update(jags.logit, 25000)
-posterior.logit <- coda.samples(jags.logit, params, n.iter = 50000)
+inits1=inits()
+inits2=inits()
+inits3=inits()
+
+library(parallel)
+cl <- makeCluster(3)
+jags.logit <- run.jags(method="rjparallel", method.options=list(cl=cl),
+                     data = jags.data, 
+                     inits = list(inits1,inits2,inits3),
+                     model=model,
+                     n.chains = 3,
+                     adapt=2500,
+                     monitor=c(params),
+                     burnin=20000,
+                     sample=30000,
+                     summarise=FALSE,
+                     thin=5,
+                     plots=FALSE
+)
+
+jagssamples <- as.mcmc.list(jags.logit)
+summary<-extend.jags(jags.logit,drop.monitor=c("prediction"), summarise=TRUE)
+
 
 require(ggmcmc)
 L.factors <- data.frame(
   Parameter=paste("beta[", seq(1:6), "]", sep=""),
-  Label=c("beta.0","E","E/S0","Im","S","S0"))
+  Label=c("beta.0","S","S0","E/S0","E","Im"))
 head(L.factors)
-beta_post<-ggs(posterior.logit,par_labels=L.factors,family=c("beta"))
+beta_post<-ggs(jagssamples,par_labels=L.factors,family=c("beta"))
 
 
 pdf("..//figures/betas.pdf",width=7,height=7)
 ggs_caterpillar(beta_post)+theme_stata()+ylab("")
 dev.off()
 
-ggmcmc(beta_post)
-ggs_density(beta_post)
 
-jagssamples <- jags.samples(jags.logit, params, n.iter = 50000)
-predtype<-summary(as.mcmc.list(jagssamples$prediction))
+pdf("..//figures/density.pdf",width=7,height=10)
+ggs_density(beta_post)+theme_stata()+ylab("")
+dev.off()
+
+
+# Diagnostics Confusion Matrix (very unlikely to be good)
+predtype<-summary(as.mcmc.list(jags.logit, vars="prediction"))
 predtype<-predtype$quantiles
-
 require(mlearning)
 require(caret)
-SNe_conf<-confusion(predtype[,3], typeSne)
+
 
 xtab <- table(predtype[,3], typeSne)
 confusionMatrix(xtab)
