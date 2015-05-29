@@ -53,7 +53,7 @@ prediction[i]~dbern(p[i])
 }
 }"
 
-params <- c("beta.0","beta.1","prediction","ranef")
+params <- c("beta.0","beta.1","prediction","ranef","p")
 
 inits1=list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1))
 inits2=list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1))
@@ -107,4 +107,6 @@ require(caret)
 xtab <- table(predtype[,3], typeSne)
 confusionMatrix(xtab)
 
-confusionMatrix(xtab, prevalence = 0.25) 
+# probabilities
+prob<-summary(as.mcmc.list(jags.logit, vars="p"))
+prob<-prob$quantiles
