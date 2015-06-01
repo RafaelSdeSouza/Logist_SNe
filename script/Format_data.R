@@ -9,7 +9,7 @@ data.0= read.fwf(file="..//data//snsdss.dat",width = c(7,1, 11, 9, 1,9,1,8,2,1,
 
 # Select few variables for test. For now, galaxy morphology and SN type
 
-SN_cat<-data.frame(SNtype=data.0[,11],Galtype=data.0[,19],mag_g=data.0[,29])
+SN_cat<-data.frame(SNtype=data.0[,11],Galtype=data.0[,19],mag_g=data.0[,29], bar=data.0[,23])
 
 SN_cat2<-na.omit(SN_cat)
 require(gdata)
@@ -38,4 +38,4 @@ SN_cat4<-SN_cat3[which(SN_cat3$Galtype2=="E"|SN_cat3$Galtype2=="E/S0"|SN_cat3$Ga
                          SN_cat3$Galtype2=="S"|SN_cat3$Galtype2=="S0"),]
 SN_cat4$Galtype2<-droplevels(SN_cat4$Galtype2)
 
-write.matrix(SN_cat4[,c(1,3,4)],"..//data/clean_cat.dat")
+write.matrix(SN_cat4[,-2],"..//data/clean_cat.dat",sep = "\t")
