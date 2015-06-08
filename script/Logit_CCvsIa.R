@@ -11,17 +11,19 @@ library(plyr)
 library(MASS)
 library(scales)
 library(plyr)
+require(gdata)
 require(runjags)
+require(gdata)
 #Read the already clean dataset
 
 data.1= read.table(file="..//data//clean_cat.dat",header=TRUE,na.strings = "",sep="\t")
 data.1$Galtype2<-trim(data.1$Galtype2)
 
-galtype<-match(data.1$Galtype2,c("S","S0","E/S0","E","Im"))
+galtype<-match(data.1$Galtype2,c("E","E/S0","S","S0","Im"))
 Ntype<-length(unique(data.1$Galtype2))
 
 
-typeSne<-as.numeric(data.1$SNtype)-1
+typeSne<-match(trim(data.1$SNtype),c("Ia","CC"))-1
 bar<-as.numeric(data.1$bar)-1
 jags.data <- list(Y= typeSne,
                  N = nrow(data.1),
@@ -36,11 +38,14 @@ model<-"model{
 #1. Priors
 
 tau.R<-pow(sdBeta,-1)
-sdBeta ~ dgamma(0.01,0.01)
+sdBeta ~ dgamma(0.001,0.001)
+#alpha1~dnorm(0,0.00001)
+#tau.z~dgamma(0.001,0.001)
 
 # Random intercept 
 for (j in 1:Ntype){
 ranef[j]~ddexp(0,tau.R)
+#ranef[j]~dnorm(alpha1,tau.z)
 }
 
 beta.0~dnorm(0,0.001)
@@ -49,23 +54,24 @@ beta.2~dnorm(0,0.001)
 
 #2. Likelihood
 for (i in 1:N){
-Y[i] ~ dbern(p[i])
-logit(p[i]) <-  eta[i]
+Y[i] ~ dbern(pi[i])
+logit(pi[i]) <-  eta[i]
 eta[i] <- beta.0+beta.1*mag_g[i]+beta.2*bar[i]+ranef[galtype[i]]
+#eta[i] <- beta.0+beta.1*mag_g[i]+ranef[galtype[i]]
 #3. Prediction
-prediction[i]~dbern(p[i])
+prediction[i]~dbern(pi[i])
 }
 }"
 
-params <- c("beta.0","beta.1","beta.2","prediction","ranef","p")
+params <- c("beta.0","beta.1","beta.2","prediction","ranef","pi")
 
-inits1=list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),beta.2=rnorm(1,0,0.1))
-inits2=list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),beta.2=rnorm(1,0,0.1))
-inits3=list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),beta.2=rnorm(1,0,0.1))
+inits1=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
+inits2=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
+inits3=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
 
 library(parallel)
 cl <- makeCluster(3)
-jags.logit <- run.jags(method="rjparallel", method.options=list(cl=cl),
+jags.logit <- run.jags(method="rjparallel", 
                      data = jags.data, 
                      inits = list(inits1,inits2,inits3),
                      model=model,
@@ -75,19 +81,18 @@ jags.logit <- run.jags(method="rjparallel", method.options=list(cl=cl),
                      burnin=20000,
                      sample=40000,
                      summarise=FALSE,
-                     thin=5,
                      plots=FALSE
 )
 
 jagssamples <- as.mcmc.list(jags.logit)
-summary<-extend.jags(jags.logit,drop.monitor=c("prediction"), summarise=TRUE)
+summary<-extend.jags(jags.logit,drop.monitor=c("prediction","pi"), summarise=TRUE)
 print(summary)
 
 
 require(ggmcmc)
 L.factors <- data.frame(
   Parameter=paste("ranef[", seq(1:5), "]", sep=""),
-  Label=c("S","S0","E/S0","E","Im"))
+  Label=c("E","E/S0","S","S0","Im"))
 head(L.factors)
 ranef_post<-ggs(jagssamples,par_labels=L.factors,family=c("ranef"))
 
@@ -105,7 +110,7 @@ dev.off()
 # Diagnostics Confusion Matrix (very unlikely to be good)
 predtype<-summary(as.mcmc.list(jags.logit, vars="prediction"))
 predtype<-predtype$quantiles
-require(mlearning)
+
 require(caret)
 
 
@@ -113,5 +118,42 @@ xtab <- table(predtype[,3], typeSne)
 confusionMatrix(xtab)
 
 # probabilities
-prob<-summary(as.mcmc.list(jags.logit, vars="p"))
+prob<-summary(as.mcmc.list(jags.logit, vars="pi"))
 prob<-prob$quantiles
+
+library(pROC)
+ROCF<-data.frame(True=typeSne,Predicted=gd$prob)
+F1 <-roc(ROCF$True,ROCF$Predicted)
+
+pdf("..//figures/ROC_GLM.pdf")
+plot.roc(F1, col="blue",auc.polygon.col="blue", print.auc=TRUE)
+dev.off()
+
+
+
+gd<-read.fwf("../data/ggdata.dat",width=c(11,13,13,14,27))
+colnames(gd)<-c("SNtype","mag_g","bar","Galtype2","prob")
+gd$Galtype2<-trim(as.factor(gd$Galtype2))
+gd$bar<-trim(gd$bar)
+gd$bar<-as.numeric(gd$bar)
+gd$bar<-as.factor(gd$bar)
+library(plyr)
+gd$bar<-revalue(gd$bar, c("1"="No", "2"="Yes"))
+gd$bar<-as.factor(gd$bar)
+pdf("..//figures/probs_GLM.pdf",height = 10,width = 12)
+ggplot(data=gd,aes(x=mag_g,y=prob,colour=Galtype2,shape=bar))+
+  geom_point(size=3)+
+  theme_stata()+xlab("u-band")+ylab("Probability of CC event")+scale_x_reverse()+
+  
+  scale_color_gdocs(name="Galaxy type")+scale_linetype_manual(values=c("solid","dotted"),name="Bar")+
+  scale_shape_manual(values=c(3,19),name="Bar")+
+  theme(strip.background = element_rect(fill="gray95"),
+  legend.position="bottom",plot.title = element_text(hjust=0.5),
+                                                       axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=20),
+                                                       strip.text.x=element_text(size=20),
+                                                       axis.title.x=element_text(vjust=-0.25),
+ text = element_text(size=20))
+dev.off()
+
+
+
