@@ -39,30 +39,55 @@ tau.R<-pow(sdBeta,-1)
 sdBeta ~ dgamma(0.001,0.001)
   
 # Random intercept 
-for (j in 1:Ntype){
-ranef[j]~ddexp(0,tau.R)
+
+for (k in 1:Ntype){
+ranef[k]~ddexp(0,tau.R)
 }
 
 for (k in 2:Ntype){ 
 
 ## prior for coefficients
-for( j in 1:2){
+for(j in 1:2){
 beta[j,k]~dnorm(0,1e6)
 }
 }
 ## Likelihood
 
-for(i in 1:N)
+for(i in 1:N){
 Y~dcat(p[i,1:Ntype])
 for(k in 1:Ntype){
-z[i,k]<-beta[1,k]+ranef[galtype[i]]
+z[i,k]<-beta[1,k]+ranef[galtype[i],k]
 expz[i,k]<-exp(z[i,k])
 p[i,k]<-expz[i,k]/sum(expz[i,1:Ntype])
+}
 }
 
 for(j in 1:2)
 {
 beta[j,1]<-0
 }
-  
 }"
+
+
+params <- c("beta","ranef","p")
+
+inits1=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
+inits2=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
+inits3=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
+
+library(parallel)
+cl <- makeCluster(3)
+jags.mlogit <- run.jags(method="rjparallel", 
+                       data = jags.data, 
+ #                      inits = list(inits1,inits2,inits3),
+                       model=model,
+                       n.chains = 3,
+                       adapt=2500,
+                       monitor=c(params),
+                       burnin=20000,
+                       sample=40000,
+                       summarise=FALSE,
+                       plots=FALSE
+)
+
+jagssamples <- as.mcmc.list(jags.mlogit)
