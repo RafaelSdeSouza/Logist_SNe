@@ -1,5 +1,7 @@
 # Script to prepare data set for logit analysis
 require(MASS)
+require(gdata)
+require(plyr)
 #Read dataset
 
 data.0= read.fwf(file="..//data//snsdss.dat",width = c(7,1, 11, 9, 1,9,1,8,2,1,
@@ -15,10 +17,10 @@ SN_cat2<-na.omit(SN_cat)
 require(gdata)
 SN_cat2$SNtype<-trim(SN_cat2$SNtype)
 
-SN_cat3<-SN_cat2[which(SN_cat2$SNtype=="Ia"|SN_cat2$SNtype=="II"|SN_cat2$SNtype=="Ia"|
+SN_cat3<-SN_cat2[which(SN_cat2$SNtype=="Ia"|SN_cat2$SNtype=="II"|SN_cat2$SNtype=="IIn"|
                          SN_cat2$SNtype=="Ib"|SN_cat2$SNtype=="Ib/c"|SN_cat2$SNtype=="Ic"),]
 SN_cat3$SNtype<-droplevels(SN_cat3$SNtype)
-SN_cat3$SNtype<-revalue(SN_cat3$SNtype,c("Ia"="Ia","Ib"="CC","Ib/c"="CC","Ic"="CC","II"="CC"))
+#SN_cat3$SNtype<-revalue(SN_cat3$SNtype,c("Ia"="Ia","Ib"="CC","Ib/c"="CC","Ic"="CC","II"="CC"))
 
 # Start the logit model
 
@@ -38,4 +40,4 @@ SN_cat4<-SN_cat3[which(SN_cat3$Galtype2=="E"|SN_cat3$Galtype2=="E/S0"|SN_cat3$Ga
                          SN_cat3$Galtype2=="S"|SN_cat3$Galtype2=="S0"),]
 SN_cat4$Galtype2<-droplevels(SN_cat4$Galtype2)
 
-write.matrix(SN_cat4[,-2],"..//data/clean_cat.dat",sep = "\t")
+write.matrix(SN_cat4[,-2],"..//data/multinomial_cat.dat",sep = "\t")
