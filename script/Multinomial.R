@@ -45,17 +45,22 @@ model<-"model{
 
 ## prior for coefficients
 for(k in 1:2){
-beta[1,k]<-0
+beta[k,1]<-0
 }
-for(j in 2:6){
-beta[j,1:2]~dmnorm(b0[], B0[,])
+
+
+for(k in 2:6){
+for(j in 1:2){
+beta[j,k]~dnorm(0, 1e-5)
 }
+}
+
 
 ## Likelihood
 for(i in 1:N){
     for(j in 1:6){
 #z[i,j]<-beta[j,1]+ranef[galtype[i]]
-z[i,j]<-beta[j,1]
+z[i,j]<-beta[1,j]+beta[2,j]*bar[i]
 expz[i,j]<-exp(z[i,j])
 p[i,j]<-expz[i,j]/sum(expz[i,1:Ntype])
                      }
