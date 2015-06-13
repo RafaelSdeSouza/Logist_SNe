@@ -22,50 +22,46 @@ galtype<-match(data.1$Galtype2,c("E","E/S0","S","S0","Im"))
 Ntype<-length(unique(data.1$Galtype2))
 
 
-typeSne<-match(trim(data.1$SNtype),c("Ia","Ib","Ib/c","Ic","II","IIn"))-1
+typeSne<-match(trim(data.1$SNtype),c("Ia","Ib","Ib/c","Ic","II","IIn"))
 bar<-as.numeric(data.1$bar)-1
 jags.data <- list(Y= typeSne,
                   N = nrow(data.1),
                   mag_g = data.1$mag_g,
                   galtype = galtype,
                   bar=bar,
-                  Ntype=Ntype
+                  Ntype=Ntype,
+                  b0 = rep(0, 2),
+                  B0 = diag(0.00001, 2)
 )
 
-model<-"{
+model<-"model{
 ## priors
-
-tau.R<-pow(sdBeta,-1)
-sdBeta ~ dgamma(0.001,0.001)
-  
+#tau.R<-pow(sdBeta,-1)
+#sdBeta ~ dgamma(0.001,0.001)
 # Random intercept 
-
-for (k in 1:Ntype){
-ranef[k]~ddexp(0,tau.R)
-}
-
-for (k in 2:Ntype){ 
+#for (k in 1:Ntype){
+#ranef[k]~ddexp(0,tau.R)
+#}
 
 ## prior for coefficients
-for(j in 1:2){
-beta[j,k]~dnorm(0,1e6)
+for(k in 1:2){
+beta[1,k]<-0
 }
+for(j in 2:6){
+beta[j,1:2]~dmnorm(b0[], B0[,])
 }
+
 ## Likelihood
-
 for(i in 1:N){
-Y~dcat(p[i,1:Ntype])
-for(k in 1:Ntype){
-z[i,k]<-beta[1,k]+ranef[galtype[i],k]
-expz[i,k]<-exp(z[i,k])
-p[i,k]<-expz[i,k]/sum(expz[i,1:Ntype])
-}
+    for(j in 1:6){
+#z[i,j]<-beta[j,1]+ranef[galtype[i]]
+z[i,j]<-beta[j,1]
+expz[i,j]<-exp(z[i,j])
+p[i,j]<-expz[i,j]/sum(expz[i,1:Ntype])
+                     }
+Y[i]~dcat(p[i,1:6])
 }
 
-for(j in 1:2)
-{
-beta[j,1]<-0
-}
 }"
 
 
