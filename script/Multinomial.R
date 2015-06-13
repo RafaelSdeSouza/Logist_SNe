@@ -29,9 +29,7 @@ jags.data <- list(Y= typeSne,
                   mag_g = data.1$mag_g,
                   galtype = galtype,
                   bar=bar,
-                  Ntype=Ntype,
-                  b0 = rep(0, 2),
-                  B0 = diag(0.00001, 2)
+                  Ntype=Ntype
 )
 
 model<-"model{
@@ -43,44 +41,51 @@ model<-"model{
 #ranef[k]~ddexp(0,tau.R)
 #}
 
-## prior for coefficients
-for(k in 1:2){
-beta[k,1]<-0
-}
 
 
 for(k in 2:6){
 for(j in 1:2){
-beta[j,k]~dnorm(0, 1e-5)
+beta[j,k]~dnorm(0,1e-5)
 }
+}
+
+## prior for coefficients
+for(j in 1:2){
+beta[j,1]~dnorm(0,1e6)
 }
 
 
 ## Likelihood
 for(i in 1:N){
+Y[i]~dcat(p[i,1:6])
     for(j in 1:6){
 #z[i,j]<-beta[j,1]+ranef[galtype[i]]
 z[i,j]<-beta[1,j]+beta[2,j]*bar[i]
 expz[i,j]<-exp(z[i,j])
 p[i,j]<-expz[i,j]/sum(expz[i,1:Ntype])
                      }
-Y[i]~dcat(p[i,1:6])
+
 }
 
 }"
 
 
-params <- c("beta","ranef","p")
+params <- c("beta","p")
 
-inits1=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
-inits2=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
-inits3=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
+inits<-function(){list(beta=structure(.Data=c(rep(NA,2),runif(2*(6-1),-1,1)),.Dim=c(2,6)))}
+
+
+inits1=inits()
+inits2=inits()
+inits3=inits()
+
+
 
 library(parallel)
 cl <- makeCluster(3)
 jags.mlogit <- run.jags(method="rjparallel", 
                        data = jags.data, 
- #                      inits = list(inits1,inits2,inits3),
+#                      inits = list(inits1,inits2,inits3),
                        model=model,
                        n.chains = 3,
                        adapt=2500,
