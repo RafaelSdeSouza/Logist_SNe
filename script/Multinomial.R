@@ -24,53 +24,39 @@ Ntype<-length(unique(data.1$Galtype2))
 
 typeSne<-match(trim(data.1$SNtype),c("Ia","Ib","Ib/c","Ic","II","IIn"))
 bar<-as.numeric(data.1$bar)-1
-jags.data <- list(Y= typeSne,
+jags.data <- list(y= typeSne,
                   N = nrow(data.1),
-                  mag_g = data.1$mag_g,
-                  galtype = galtype,
+#                  galtype = galtype,
                   bar=bar,
-                  Ntype=Ntype
-)
-
-model<-"model{
-## priors
-#tau.R<-pow(sdBeta,-1)
-#sdBeta ~ dgamma(0.001,0.001)
-# Random intercept 
-#for (k in 1:Ntype){
-#ranef[k]~ddexp(0,tau.R)
-#}
+                  J=6
+                  )
 
 
-
-for(k in 2:6){
-for(j in 1:2){
-beta[j,k]~dnorm(0,1e-5)
-}
-}
-
-## prior for coefficients
-for(j in 1:2){
-beta[j,1]~dnorm(0,1e6)
-}
-
-
-## Likelihood
-for(i in 1:N){
-Y[i]~dcat(p[i,1:6])
-    for(j in 1:6){
-#z[i,j]<-beta[j,1]+ranef[galtype[i]]
-z[i,j]<-beta[1,j]+beta[2,j]*bar[i]
-expz[i,j]<-exp(z[i,j])
-p[i,j]<-expz[i,j]/sum(expz[i,1:Ntype])
-                     }
-
-}
-
-}"
+model<- "model{
+  for(i in 1:N){
+    y[i] ~ dcat(p[i, 1:J])
+    
+    for (j in 1:J){
+      log(q[i,j]) <-  beta[1,j] + 
+        beta[2,j]*bar[i] 
+      
+      p[i,j] <- q[i,j]/sum(q[i,1:J])
+    }   # close J loop
+    
+  }  # close N loop
+  
+  for(k in 1:2){
+   beta[k,1]~dbern(0) ## MUST set the first set of covariates (for the first outcome category) to 0
+    for(j in 2:J){
+      beta[k,j] ~ dnorm(0, 0.1)
+    }  # close J loop
+  }  # close K loop
+}"  # close model loop 
 
 
-params <- c("beta","p")
+
+
+params<-c("beta","p")
 
 inits<-function(){list(beta=structure(.Data=c(rep(NA,2),runif(2*(6-1),-1,1)),.Dim=c(2,6)))}
 
@@ -78,6 +64,8 @@ inits<-function(){list(beta=structure(.Data=c(rep(NA,2),runif(2*(6-1),-1,1)),.Di
 inits1=inits()
 inits2=inits()
 inits3=inits()
+chain_inits<-list(inits1,inits2,inits3)
+
 
 
 
@@ -85,15 +73,26 @@ library(parallel)
 cl <- makeCluster(3)
 jags.mlogit <- run.jags(method="rjparallel", 
                        data = jags.data, 
-#                      inits = list(inits1,inits2,inits3),
+                      inits = chain_inits,
                        model=model,
                        n.chains = 3,
-                       adapt=2500,
+                       adapt=1000,
                        monitor=c(params),
-                       burnin=20000,
-                       sample=40000,
+                       burnin=1000,
+                       sample=5000,
                        summarise=FALSE,
                        plots=FALSE
 )
+summary<-extend.jags(jags.mlogit,drop.monitor=c("p"), summarise=TRUE)
+print(summary)
 
 jagssamples <- as.mcmc.list(jags.mlogit)
+
+beta_post<-ggs(jagssamples,family=c("beta"))
+ggs_caterpillar(beta_post)+theme_stata()+ylab("")
+
+# probabilities
+prob<-summary(as.mcmc.list(jags.mlogit, vars="p"))
+prob<-prob$quantiles
+
+
