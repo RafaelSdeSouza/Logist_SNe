@@ -26,9 +26,10 @@ typeSne<-match(trim(data.1$SNtype),c("Ia","Ib","Ib/c","Ic","II","IIn"))
 bar<-as.numeric(data.1$bar)-1
 jags.data <- list(y= typeSne,
                   N = nrow(data.1),
-#                  galtype = galtype,
+                 galtype = galtype,
                   bar=bar,
-                  J=6
+                  J=6,
+                  Ntype = Ntype
                   )
 
 
@@ -38,13 +39,24 @@ model<- "model{
     
     for (j in 1:J){
       log(q[i,j]) <-  beta[1,j] + 
-        beta[2,j]*bar[i] 
+        beta[2,j]*bar[i]+ranef[galtype[i]]
       
       p[i,j] <- q[i,j]/sum(q[i,1:J])
     }   # close J loop
     
   }  # close N loop
-  
+
+# Priors
+
+tau.R<-pow(sdBeta,-1)
+sdBeta ~ dgamma(0.001,0.001)
+
+# Random intercept 
+for (j in 1:Ntype){
+ranef[j]~ddexp(0,tau.R)
+
+}
+
   for(k in 1:2){
    beta[k,1]~dbern(0) ## MUST set the first set of covariates (for the first outcome category) to 0
     for(j in 2:J){
@@ -56,7 +68,7 @@ model<- "model{
 
 
 
-params<-c("beta","p")
+params<-c("beta","p","ranef")
 
 inits<-function(){list(beta=structure(.Data=c(rep(NA,2),runif(2*(6-1),-1,1)),.Dim=c(2,6)))}
 
