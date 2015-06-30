@@ -1,4 +1,3 @@
-
 #  Required libraries
 library(rjags)
 library(ggmcmc)
@@ -38,8 +37,7 @@ model<- "model{
     y[i] ~ dcat(p[i, 1:J])
     
     for (j in 1:J){
-      log(q[i,j]) <-  beta[1,j] + 
-        beta[2,j]*bar[i]+ranef[galtype[i]]
+      log(q[i,j]) <-  beta[1,j] + beta[2,j]*bar[i]+ranef[galtype[i]]
       
       p[i,j] <- q[i,j]/sum(q[i,1:J])
     }   # close J loop
@@ -49,11 +47,11 @@ model<- "model{
 # Priors
 
 #tau.R<-pow(sdBeta,-1)
-sdBeta ~ dgamma(0.001,0.001)
+#sdBeta ~ dgamma(0.001,0.001)
 
 # Random intercept 
 for (j in 1:Ntype){
-ranef[j]~dnorm(0,1/sdBeta)
+ranef[j]~dnorm(0,1e-5)
 
 }
 
@@ -91,7 +89,7 @@ jags.mlogit <- run.jags(method="rjparallel",
                        adapt=1000,
                        monitor=c(params),
                        burnin=2000,
-                       sample=50000,
+                       sample=5000,
                        summarise=FALSE,
                        plots=FALSE
 )
