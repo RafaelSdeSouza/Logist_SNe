@@ -48,12 +48,12 @@ model<- "model{
 
 # Priors
 
-tau.R<-pow(sdBeta,-1)
+#tau.R<-pow(sdBeta,-1)
 sdBeta ~ dgamma(0.001,0.001)
 
 # Random intercept 
 for (j in 1:Ntype){
-ranef[j]~ddexp(0,tau.R)
+ranef[j]~dnorm(0,1/sdBeta)
 
 }
 
@@ -90,8 +90,8 @@ jags.mlogit <- run.jags(method="rjparallel",
                        n.chains = 3,
                        adapt=1000,
                        monitor=c(params),
-                       burnin=1000,
-                       sample=5000,
+                       burnin=2000,
+                       sample=50000,
                        summarise=FALSE,
                        plots=FALSE
 )
