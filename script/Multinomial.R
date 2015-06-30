@@ -37,7 +37,7 @@ model<- "model{
     y[i] ~ dcat(p[i, 1:J])
     
     for (j in 1:J){
-      log(q[i,j]) <-  beta[1,j] + beta[2,j]*bar[i]+ranef[galtype[i]]
+      log(q[i,j]) <-  beta[1,j] + beta[2,j]*bar[i]+ranef[galtype[i],j]
       
       p[i,j] <- q[i,j]/sum(q[i,1:J])
     }   # close J loop
@@ -49,10 +49,13 @@ model<- "model{
 #tau.R<-pow(sdBeta,-1)
 #sdBeta ~ dgamma(0.001,0.001)
 
-# Random intercept 
-for (j in 1:Ntype){
-ranef[j]~dnorm(0,1e-5)
-
+# Random intercept model
+for (k in 1:Ntype){
+#ranef[j]~dnorm(0,1e-5)
+ranef[k,1]~dbern(0)
+for(j in 2:J){
+ranef[k,j]~ddexp(0,1/1.64)
+}
 }
 
   for(k in 1:2){
@@ -107,6 +110,11 @@ L.factors <- data.frame(
 beta_post<-ggs(jagssamples,par_labels=L.factors,family=c("beta"))
 pdf("..//figures/multi_beta.pdf",width=8,height=10)
 ggs_caterpillar(beta_post)+theme_stata()+ylab("")
+dev.off()
+
+cof_post<-ggs(jagssamples,family=c("ranef"))
+pdf("..//figures/multi_ranef.pdf",width=12,height=20)
+ggs_caterpillar(cof_post)+theme_stata()+ylab("")
 dev.off()
 
 # probabilities
