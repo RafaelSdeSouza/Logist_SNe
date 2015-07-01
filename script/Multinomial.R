@@ -102,9 +102,9 @@ print(summary)
 jagssamples <- as.mcmc.list(jags.mlogit)
 L.factors <- data.frame(
   Parameter=c(paste("beta[1,", seq(1:6), "]", sep=""),paste("beta[2,", seq(1:6), "]", sep="")),
-  Label=c("beta.0 Ia","beta.0 Ib","beta.0 Ib/c","beta.0 Ic","beta.0 II",
-        "beta.0 IIn","beta.1 Ia","beta.1 Ib","beta.1 Ib/c","beta.1 Ic","beta.1 II",
-        "beta.1 IIn"))
+  Label=c("Ia","Ib","Ib/c","Ic","II",
+        "IIn","Bar-Ia","Bar-Ib","Bar-Ib/c","Bar-Ic","Bar-II",
+        "Bar-IIn"))
 #head(L.factors)
 
 beta_post<-ggs(jagssamples,par_labels=L.factors,family=c("beta"))
@@ -112,10 +112,22 @@ pdf("..//figures/multi_beta.pdf",width=8,height=10)
 ggs_caterpillar(beta_post)+theme_stata()+ylab("")
 dev.off()
 
-cof_post<-ggs(jagssamples,family=c("ranef"))
+L.factors2<-data.frame(
+  Parameter=c(paste("ranef[1,",seq(1:6), "]", sep=""),paste("ranef[2,",seq(1:6), "]", sep=""),paste("ranef[3,",seq(1:6), "]", sep=""),
+              paste("ranef[4,",seq(1:6), "]", sep=""),paste("ranef[5,",seq(1:6), "]", sep="")),
+  Label=c("E-Ia","E-Ib","E-Ibc","E-Ic","E-II","E-IIn","E/S0-Ia","E/S0-Ib","E/S0-Ibc","E/S0-Ic","E/S0-II","E/S0-IIn",
+          "S-Ia","S-Ib","S-Ibc","S-Ic","S-II","S-IIn","S0-Ia","S0-Ib","S0-Ibc","S0-Ic","S0-II","S0-IIn",
+          "Im-Ia","Im-Ib","Im-Ibc","Im-Ic","Im-II","Im-IIn"),
+  supernova=as.factor(rep(c("Ia","Ib","Ibc","Ic","II","IIn"),5)),galaxies=as.factor(rep(c("E","E/S0","S","S0","Im"),each=6)))
+
+cof_post<-ggs(jagssamples,par_labels=L.factors2,family="ranef")
 pdf("..//figures/multi_ranef.pdf",width=12,height=20)
 ggs_caterpillar(cof_post)+theme_stata()+ylab("")
 dev.off()
+
+
+
+
 
 # probabilities
 prob<-summary(as.mcmc.list(jags.mlogit, vars="p"))
