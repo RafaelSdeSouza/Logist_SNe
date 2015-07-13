@@ -38,8 +38,6 @@ model<- "model{
     y[i] ~ dcat(p[i, 1:J])
     
     for (j in 1:J){
-      log(q[i,j]) <-  beta[1,j] + 
-        beta[2,j]*bar[i]+ranef[galtype[i]]
       
       p[i,j] <- q[i,j]/sum(q[i,1:J])
     }   # close J loop
@@ -48,12 +46,6 @@ model<- "model{
 
 # Priors
 
-tau.R<-pow(sdBeta,-1)
-sdBeta ~ dgamma(0.001,0.001)
-
-# Random intercept 
-for (j in 1:Ntype){
-ranef[j]~ddexp(0,tau.R)
 
 }
 
