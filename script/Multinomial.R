@@ -101,9 +101,6 @@ print(summary)
 jagssamples <- as.mcmc.list(jags.mlogit)
 L.factors <- data.frame(
   Parameter=c(paste("beta[1,", seq(1:6), "]", sep=""),paste("beta[2,", seq(1:6), "]", sep="")),
-  Label=c("beta.0 Ia","beta.0 Ib","beta.0 Ib/c","beta.0 Ic","beta.0 II",
-        "beta.0 IIn","beta.1 Ia","beta.1 Ib","beta.1 Ib/c","beta.1 Ic","beta.1 II",
-        "beta.1 IIn"))
 #head(L.factors)
 
 beta_post<-ggs(jagssamples,par_labels=L.factors,family=c("beta"))
