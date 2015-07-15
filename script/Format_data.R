@@ -8,10 +8,13 @@ data.0= read.fwf(file="..//data//snsdss.dat",width = c(7,1, 11, 9, 1,9,1,8,2,1,
                                                        11,1,1,26,2,14,10,9,10,1,
                                                        1,1,2,6,5,5,6,6,6,7,7))
 
+#SN_cat<-read.table(file="..//data//multinomial_cat.dat",header=TRUE,sep="\t",na.strings = "")
+#SN_cat2<-na.omit(data.frame(RA=data.0[,3],DEC=data.0[,4],SNtype=data.0[,11],Galtype=data.0[,19]))
+#write.matrix(SN_cat3,"..//data/morf2.dat",sep = "\t")
 
 # Select few variables for test. For now, galaxy morphology and SN type
 
-SN_cat<-data.frame(SNtype=data.0[,11],Galtype=data.0[,19],mag_g=data.0[,29], bar=data.0[,23])
+SN_cat<-data.frame(RA=data.0[,3],DEC=data.0[,4],SNtype=data.0[,11],Galtype=data.0[,19],mag_g=data.0[,29], bar=data.0[,23])
 
 SN_cat2<-na.omit(SN_cat)
 require(gdata)
@@ -40,4 +43,6 @@ SN_cat4<-SN_cat3[which(SN_cat3$Galtype2=="E"|SN_cat3$Galtype2=="E/S0"|SN_cat3$Ga
                          SN_cat3$Galtype2=="S"|SN_cat3$Galtype2=="S0"),]
 SN_cat4$Galtype2<-droplevels(SN_cat4$Galtype2)
 
-write.matrix(SN_cat4[,-2],"..//data/multinomial_cat.dat",sep = "\t")
+write.matrix(SN_cat4[,-4],"..//data/multinomial_cat.dat",sep = "\t")
+
+#write.matrix(SN_cat4[,c("RA","DEC","SNtype","Galtype2")],"..//data/morf2_cat.dat",sep = "\t")
