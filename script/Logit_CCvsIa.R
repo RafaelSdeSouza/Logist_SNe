@@ -16,20 +16,20 @@ require(runjags)
 require(gdata)
 #Read the already clean dataset
 
-data.1= read.table(file="..//data//clean_cat.dat",header=TRUE,na.strings = "",sep="\t")
-data.1$Galtype2<-trim(data.1$Galtype2)
+data.1= read.table(file="..//data//logit_combined.dat",header=TRUE,na.strings = "",sep="\t")
+data.1$Galtype<-trim(data.1$Galtype)
 
-galtype<-match(data.1$Galtype2,c("E","E/S0","S","S0","Im"))
-Ntype<-length(unique(data.1$Galtype2))
+galtype<-match(data.1$Galtype,c("E","E/S0","S","S0","Im"))
+Ntype<-length(unique(data.1$Galtype))
 
 
 typeSne<-match(trim(data.1$SNtype),c("Ia","CC"))-1
 bar<-as.numeric(data.1$bar)-1
 jags.data <- list(Y= typeSne,
                  N = nrow(data.1),
-                 mag_g = data.1$mag_g,
+                 SFR = data.1$logSSFRF,
                  galtype = galtype,
-                 bar=bar,
+#                 bar=bar,
                  Ntype=Ntype
                  )
 
@@ -50,24 +50,24 @@ ranef[j]~ddexp(0,tau.R)
 
 beta.0~dnorm(0,0.001)
 beta.1~dnorm(0,0.001)
-beta.2~dnorm(0,0.001)
+#beta.2~dnorm(0,0.001)
 
 #2. Likelihood
 for (i in 1:N){
 Y[i] ~ dbern(pi[i])
 logit(pi[i]) <-  eta[i]
-eta[i] <- beta.0+beta.1*mag_g[i]+beta.2*bar[i]+ranef[galtype[i]]
-#eta[i] <- beta.0+beta.1*mag_g[i]+ranef[galtype[i]]
+eta[i] <- beta.0+beta.1*SFR[i]+ranef[galtype[i]]
+#eta[i] <- beta.0+beta.1*SFR[i]+ranef[galtype[i]]
 #3. Prediction
 prediction[i]~dbern(pi[i])
 }
 }"
 
-params <- c("beta.0","beta.1","beta.2","prediction","ranef","pi")
+params <- c("beta.0","beta.1","prediction","ranef","pi")
 
-inits1=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
-inits2=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
-inits3=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1),beta.2=rnorm(1,0,1))
+inits1=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1))
+inits2=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1))
+inits3=list(beta.0=rnorm(1,0,1),beta.1=rnorm(1,0,1))
 
 library(parallel)
 cl <- makeCluster(3)
@@ -122,31 +122,32 @@ prob<-summary(as.mcmc.list(jags.logit, vars="pi"))
 prob<-prob$quantiles
 
 library(pROC)
-ROCF<-data.frame(True=typeSne,Predicted=gd$prob)
+ROCF<-data.frame(True=typeSne,Predicted=prob[,3])
 F1 <-roc(ROCF$True,ROCF$Predicted)
 
 pdf("..//figures/ROC_GLM.pdf")
 plot.roc(F1, col="blue",auc.polygon.col="blue", print.auc=TRUE)
 dev.off()
 
+gd<-cbind(data.1,prob,deparse.level = 2)
 
-
-gd<-read.fwf("../data/ggdata.dat",width=c(11,13,13,14,27))
-colnames(gd)<-c("SNtype","mag_g","bar","Galtype2","prob")
+#gd<-read.fwf("../data/ggdata.dat",width=c(11,13,13,14,27))
+colnames(gd)<-c("SNtype","Galtype2","logSSFRF","lw2","lw1","prob","up1","up2")
 gd$Galtype2<-trim(as.factor(gd$Galtype2))
-gd$bar<-trim(gd$bar)
-gd$bar<-as.numeric(gd$bar)
-gd$bar<-as.factor(gd$bar)
+#gd$bar<-trim(gd$bar)
+#gd$bar<-as.numeric(gd$bar)
+#gd$bar<-as.factor(gd$bar)
 library(plyr)
-gd$bar<-revalue(gd$bar, c("1"="No", "2"="Yes"))
-gd$bar<-as.factor(gd$bar)
-pdf("..//figures/probs_GLM.pdf",height = 10,width = 12)
-ggplot(data=gd,aes(x=mag_g,y=prob,colour=Galtype2,shape=bar))+
+#gd$bar<-revalue(gd$bar, c("1"="No", "2"="Yes"))
+#gd$bar<-as.factor(gd$bar)
+pdf("..//figures/probs_GLM2.pdf",height = 10,width = 12)
+ggplot(data=gd,aes(x=logSSFRF,y=prob,colour=Galtype2))+
   geom_point(size=3)+
-  theme_stata()+xlab("u-band")+ylab("Probability of CC event")+scale_x_reverse()+
+  theme_stata()+xlab("u-band")+ylab("Probability of CC event")
+#+scale_x_reverse()+
   
-  scale_color_gdocs(name="Galaxy type")+scale_linetype_manual(values=c("solid","dotted"),name="Bar")+
-  scale_shape_manual(values=c(3,19),name="Bar")+
+  scale_color_gdocs(name="Galaxy type")+
+#  scale_shape_manual(values=c(3,19),name="Bar")+
   theme(strip.background = element_rect(fill="gray95"),
   legend.position="bottom",plot.title = element_text(hjust=0.5),
                                                        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=20),
