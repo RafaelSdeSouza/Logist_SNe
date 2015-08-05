@@ -16,8 +16,12 @@ require(runjags)
 require(gdata)
 #Read the already clean dataset
 
-data.1= read.table(file="..//data//logit_combined.dat",header=TRUE,na.strings = "",sep="\t")
-data.1$Galtype<-trim(data.1$Galtype)
+data.1= read.table(file="..//data//logit_cat.dat",header=TRUE,na.strings = "",sep="\t")
+data.1$Galtype2<-trim(data.1$Galtype2)
+
+# Transform in absolute magnitude
+
+data.1$Mag<-AbMag(data.1$mag_g,data.1$redshift)
 
 galtype<-match(data.1$Galtype,c("E","E/S0","S","S0","Im"))
 Ntype<-length(unique(data.1$Galtype))
@@ -27,7 +31,7 @@ typeSne<-match(trim(data.1$SNtype),c("Ia","CC"))-1
 bar<-as.numeric(data.1$bar)-1
 jags.data <- list(Y= typeSne,
                  N = nrow(data.1),
-                 SFR = data.1$logSSFRF,
+                 Mag = data.1$Mag,
                  galtype = galtype,
 #                 bar=bar,
                  Ntype=Ntype
@@ -56,8 +60,8 @@ beta.1~dnorm(0,0.001)
 for (i in 1:N){
 Y[i] ~ dbern(pi[i])
 logit(pi[i]) <-  eta[i]
-eta[i] <- beta.0+beta.1*SFR[i]+ranef[galtype[i]]
-#eta[i] <- beta.0+beta.1*SFR[i]+ranef[galtype[i]]
+eta[i] <- beta.0+beta.1*Mag[i]+ranef[galtype[i]]
+#eta[i] <- beta.0+beta.1*Mag[i]+ranef[galtype[i]]
 #3. Prediction
 prediction[i]~dbern(pi[i])
 }

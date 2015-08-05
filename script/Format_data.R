@@ -14,7 +14,7 @@ data.0= read.fwf(file="..//data//snsdss.dat",width = c(7,1, 11, 9, 1,9,1,8,2,1,
 
 # Select few variables for test. For now, galaxy morphology and SN type
 
-SN_cat<-data.frame(RA=data.0[,3],DEC=data.0[,4],SNtype=data.0[,11],Galtype=data.0[,19],mag_g=data.0[,29], bar=data.0[,23])
+SN_cat<-data.frame(RA=data.0[,3],DEC=data.0[,4],SNtype=data.0[,11],Galtype=data.0[,19],mag_g=data.0[,29], bar=data.0[,23], redshift=data.0[,18])
 
 SN_cat2<-na.omit(SN_cat)
 require(gdata)
@@ -23,7 +23,7 @@ SN_cat2$SNtype<-trim(SN_cat2$SNtype)
 SN_cat3<-SN_cat2[which(SN_cat2$SNtype=="Ia"|SN_cat2$SNtype=="II"|SN_cat2$SNtype=="IIn"|
                          SN_cat2$SNtype=="Ib"|SN_cat2$SNtype=="Ib/c"|SN_cat2$SNtype=="Ic"),]
 SN_cat3$SNtype<-droplevels(SN_cat3$SNtype)
-#SN_cat3$SNtype<-revalue(SN_cat3$SNtype,c("Ia"="Ia","Ib"="CC","Ib/c"="CC","Ic"="CC","II"="CC"))
+SN_cat3$SNtype<-revalue(SN_cat3$SNtype,c("Ia"="Ia","Ib"="CC","Ib/c"="CC","Ic"="CC","II"="CC"))
 
 # Start the logit model
 
@@ -43,6 +43,9 @@ SN_cat4<-SN_cat3[which(SN_cat3$Galtype2=="E"|SN_cat3$Galtype2=="E/S0"|SN_cat3$Ga
                          SN_cat3$Galtype2=="S"|SN_cat3$Galtype2=="S0"),]
 SN_cat4$Galtype2<-droplevels(SN_cat4$Galtype2)
 
-write.matrix(SN_cat4[,-4],"..//data/multinomial_cat.dat",sep = "\t")
+#write.matrix(SN_cat4[,-4],"..//data/multinomial_cat.dat",sep = "\t")
+
+write.matrix(SN_cat4[,-4],"..//data/logit_cat.dat",sep = "\t")
+
 
 #write.matrix(SN_cat4[,c("RA","DEC","SNtype","Galtype2")],"..//data/morf2_cat.dat",sep = "\t")
