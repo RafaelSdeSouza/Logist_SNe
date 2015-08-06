@@ -17,6 +17,6 @@ Omega.l <-0.73#Omega lambda
 Omega.b<-0.044
 
 H.z.inv<-function(z){1/(H0*(Omega.m*(1+z)**3+Omega.l)**0.5)}#1/H(z)
-dL<-function(zmax){3e5*(1+zmax)*integrate(H.z.inv,0,zmax)$value}#Luminosity Distance
+dL<-function(zmax){1e6*3e5*(1+zmax)*integrate(H.z.inv,0,zmax)$value}#Luminosity Distance in pc
 
-AbMag<-function(mag,z){mag-5*log(dL(z),10)-1}
+AbMag<-function(mag,z){mag-5*(log(dL(z),10)-1)}

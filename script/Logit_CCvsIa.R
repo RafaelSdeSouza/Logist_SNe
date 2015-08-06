@@ -14,6 +14,7 @@ library(plyr)
 require(gdata)
 require(runjags)
 require(gdata)
+source("DL.R")
 #Read the already clean dataset
 
 data.1= read.table(file="..//data//logit_cat.dat",header=TRUE,na.strings = "",sep="\t")
@@ -93,6 +94,41 @@ summary<-extend.jags(jags.logit,drop.monitor=c("prediction","pi"), summarise=TRU
 print(summary)
 
 
+
+
+
+gd<-cbind(data.1,prob,deparse.level = 2)
+
+#gd<-read.fwf("../data/ggdata.dat",width=c(11,13,13,14,27))
+colnames(gd)<-c("RA","DEC","SNtype","mag_g","bar","redshift","Galtype2","Mag","lw2","lw1","prob","up1","up2")
+gd$Galtype2<-trim(as.factor(gd$Galtype2))
+#gd$bar<-trim(gd$bar)
+#gd$bar<-as.numeric(gd$bar)
+#gd$bar<-as.factor(gd$bar)
+library(plyr)
+#gd$bar<-revalue(gd$bar, c("1"="No", "2"="Yes"))
+#gd$bar<-as.factor(gd$bar)
+pdf("..//figures/probs_CC.pdf",height = 10,width = 12)
+ggplot(data=gd,aes(x=Mag,y=prob,colour=Galtype2,fill=Galtype2))+
+  geom_line(size=1.25)+
+  geom_ribbon(data=gd,aes(x=Mag,y=prob,ymin=lw2, ymax=up2), alpha=0.15 ) +
+  geom_ribbon(data=gd,aes(x=Mag,y=prob, ymin=lw1, ymax=up1), alpha=0.25) +
+  theme_hc()+xlab("Absolute U-band")+ylab("Probability of CC event")+scale_x_reverse()+
+  
+  scale_color_gdocs(name="Galaxy type")+
+  scale_fill_gdocs(name="Galaxy type")+
+  #  scale_shape_manual(values=c(3,19),name="Bar")+
+  theme(strip.background = element_rect(fill="gray95"),
+        legend.position="bottom",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=20),
+        strip.text.x=element_text(size=20),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=20))
+dev.off()
+
+
+
+
 require(ggmcmc)
 L.factors <- data.frame(
   Parameter=paste("ranef[", seq(1:5), "]", sep=""),
@@ -102,7 +138,14 @@ ranef_post<-ggs(jagssamples,par_labels=L.factors,family=c("ranef"))
 
 
 pdf("..//figures/ranef.pdf",width=7,height=7)
-ggs_caterpillar(ranef_post)+theme_stata()+ylab("")
+ggs_caterpillar(ranef_post)+theme_hc()+ylab("")+
+
+  theme(strip.background = element_rect(fill="gray95"),
+        legend.position="bottom",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=20),
+        strip.text.x=element_text(size=20),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=20))
 dev.off()
 
 
@@ -133,32 +176,7 @@ pdf("..//figures/ROC_GLM.pdf")
 plot.roc(F1, col="blue",auc.polygon.col="blue", print.auc=TRUE)
 dev.off()
 
-gd<-cbind(data.1,prob,deparse.level = 2)
 
-#gd<-read.fwf("../data/ggdata.dat",width=c(11,13,13,14,27))
-colnames(gd)<-c("SNtype","Galtype2","logSSFRF","lw2","lw1","prob","up1","up2")
-gd$Galtype2<-trim(as.factor(gd$Galtype2))
-#gd$bar<-trim(gd$bar)
-#gd$bar<-as.numeric(gd$bar)
-#gd$bar<-as.factor(gd$bar)
-library(plyr)
-#gd$bar<-revalue(gd$bar, c("1"="No", "2"="Yes"))
-#gd$bar<-as.factor(gd$bar)
-pdf("..//figures/probs_GLM2.pdf",height = 10,width = 12)
-ggplot(data=gd,aes(x=logSSFRF,y=prob,colour=Galtype2))+
-  geom_point(size=3)+
-  theme_stata()+xlab("u-band")+ylab("Probability of CC event")
-#+scale_x_reverse()+
-  
-  scale_color_gdocs(name="Galaxy type")+
-#  scale_shape_manual(values=c(3,19),name="Bar")+
-  theme(strip.background = element_rect(fill="gray95"),
-  legend.position="bottom",plot.title = element_text(hjust=0.5),
-                                                       axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=20),
-                                                       strip.text.x=element_text(size=20),
-                                                       axis.title.x=element_text(vjust=-0.25),
- text = element_text(size=20))
-dev.off()
 
 
 
